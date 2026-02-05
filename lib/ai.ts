@@ -1,5 +1,7 @@
 /**
- * AI-анализ через OpenAI gpt-4o-mini: сравнение смысла и ранжирование источников
+ * AI-анализ через OpenRouter (бесплатные модели): сравнение смысла и ранжирование источников
+ * Модель openrouter/free — авто-выбор из бесплатных моделей
+ * Список: https://openrouter.ai/models?q=free
  */
 
 import OpenAI from "openai";
@@ -12,12 +14,16 @@ export interface RankedSource {
   reason?: string;
 }
 
-const MODEL = "gpt-4o-mini";
+/** Бесплатный роутер OpenRouter — автоматически выбирает модель */
+const MODEL = "openrouter/free";
 
 function getClient(): OpenAI | null {
-  const key = process.env.OPENAI_API_KEY;
+  const key = process.env.OPENROUTER_API_KEY;
   if (!key) return null;
-  return new OpenAI({ apiKey: key });
+  return new OpenAI({
+    apiKey: key,
+    baseURL: "https://openrouter.ai/api/v1",
+  });
 }
 
 export async function rankSourcesByMeaning(
@@ -27,7 +33,7 @@ export async function rankSourcesByMeaning(
 ): Promise<{ success: boolean; sources?: RankedSource[]; error?: string }> {
   const client = getClient();
   if (!client) {
-    return { success: false, error: "OPENAI_API_KEY не задан" };
+    return { success: false, error: "OPENROUTER_API_KEY не задан" };
   }
 
   if (candidates.length === 0) {

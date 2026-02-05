@@ -23,7 +23,7 @@ Copy-Item .env.example .env
 ```
 
 - `TELEGRAM_BOT_TOKEN` — токен от [@BotFather](https://t.me/BotFather)
-- `OPENAI_API_KEY` — ключ OpenAI (модель gpt-4o-mini)
+- `OPENROUTER_API_KEY` — ключ OpenRouter ([бесплатные модели](https://openrouter.ai/models?q=free))
 - `GOOGLE_CSE_API_KEY` — ключ Google Custom Search API ([Credentials](https://console.cloud.google.com/apis/credentials))
 - `GOOGLE_CSE_ENGINE_ID` — ID поисковой системы ([Programmable Search Engine](https://programmablesearchengine.google.com/))
 
