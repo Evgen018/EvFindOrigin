@@ -1,6 +1,6 @@
 /**
- * Пайплайн обработки: ввод → парсинг → извлечение сущностей
- * (Этапы 3–4; этап 5 — поиск — будет добавлен позже)
+ * Пайплайн: ввод → поиск (Google) → AI-ранжирование (OpenAI gpt-4o-mini) → результат
+ * Без предварительного анализа текста
  */
 
 import {
@@ -8,82 +8,78 @@ import {
   getTextForAnalysis,
   isUnfetchableTelegramLink,
 } from "@/lib/input";
-import { extractEntities, type ExtractedEntities } from "@/lib/entities";
+import { searchWeb } from "@/lib/search";
+import { rankSourcesByMeaning, type RankedSource } from "@/lib/ai";
 
 export type PipelineResult =
-  | { success: true; entities: ExtractedEntities; text: string }
-  | {
-      success: false;
-      reason: "empty" | "telegram_link";
-      message: string;
-    };
+  | { success: true; message: string }
+  | { success: false; message: string };
 
 /**
- * Запускает пайплайн: парсинг ввода + извлечение сущностей
+ * Запускает пайплайн: поиск → AI-ранжирование → форматирование
  */
-export function runPipeline(rawInput: string): PipelineResult {
+export async function runPipeline(rawInput: string): Promise<PipelineResult> {
   const parsed = parseInput(rawInput);
 
   if (parsed.type === "text" && (!parsed.text || parsed.text.length === 0)) {
     return {
       success: false,
-      reason: "empty",
       message:
         "Введите текст для анализа или ссылку на Telegram-пост.\n\n" +
-        "К сожалению, по ссылке на пост бот не может получить текст автоматически. " +
-        "Скопируйте текст поста и отправьте его сюда.",
+        "По ссылке бот не может получить текст — скопируйте текст поста и отправьте сюда.",
     };
   }
 
   if (isUnfetchableTelegramLink(parsed)) {
     return {
       success: false,
-      reason: "telegram_link",
       message:
-        "Это ссылка на Telegram-пост. Бот не может получить текст поста по ссылке.\n\n" +
+        "Это ссылка на Telegram-пост. Бот не может получить текст по ссылке.\n\n" +
         "Скопируйте текст поста и отправьте его сюда для анализа.",
     };
   }
 
   const text = getTextForAnalysis(parsed);
   if (!text) {
+    return { success: false, message: "Не удалось получить текст для анализа." };
+  }
+
+  const searchRes = await searchWeb(text, { num: 10 });
+  if (!searchRes.success || !searchRes.items?.length) {
     return {
       success: false,
-      reason: "empty",
-      message: "Не удалось получить текст для анализа.",
+      message: searchRes.error
+        ? `Ошибка поиска: ${searchRes.error}`
+        : "Поиск не нашёл подходящих результатов.",
     };
   }
 
-  const entities = extractEntities(text);
-  return { success: true, entities, text };
+  const rankRes = await rankSourcesByMeaning(text, searchRes.items, 3);
+  if (!rankRes.success || !rankRes.sources?.length) {
+    return {
+      success: false,
+      message: rankRes.error
+        ? `Ошибка AI: ${rankRes.error}`
+        : "Не удалось отранжировать источники.",
+    };
+  }
+
+  const formatted = formatResultForUser(text, rankRes.sources);
+  return { success: true, message: formatted };
 }
 
-/**
- * Форматирует результат извлечения сущностей в текст для отправки пользователю
- */
-export function formatEntitiesForUser(entities: ExtractedEntities): string {
-  const parts: string[] = ["✅ <b>Обработано. Извлечено:</b>"];
+function formatResultForUser(originalText: string, sources: RankedSource[]): string {
+  const parts: string[] = ["<b>Возможные источники:</b>\n"];
 
-  if (entities.claims.length > 0) {
-    parts.push(`\n<b>Утверждения:</b> ${entities.claims.length}`);
-    entities.claims.slice(0, 3).forEach((c, i) => {
-      parts.push(`  ${i + 1}. ${c.slice(0, 80)}${c.length > 80 ? "…" : ""}`);
-    });
-  }
-  if (entities.dates.length > 0) {
-    parts.push(`\n<b>Даты:</b> ${entities.dates.join(", ")}`);
-  }
-  if (entities.numbers.length > 0) {
-    parts.push(`\n<b>Числа:</b> ${entities.numbers.slice(0, 10).join(", ")}`);
-  }
-  if (entities.names.length > 0) {
-    parts.push(`\n<b>Имена/организации:</b> ${entities.names.slice(0, 5).join(", ")}`);
-  }
-  if (entities.links.length > 0) {
-    parts.push(`\n<b>Ссылки:</b> ${entities.links.length}`);
-  }
-  parts.push(`\n<b>Поисковые подсказки:</b> ${entities.searchHints.slice(0, 10).join(" | ")}`);
-  parts.push("\n\n<i>Этап поиска источников будет добавлен позже.</i>");
+  sources.forEach((s, i) => {
+    parts.push(`${i + 1}. ${s.title}`);
+    parts.push(`   <a href="${s.link}">${s.link}</a>`);
+    parts.push(`   Уверенность: ${s.confidence}%`);
+    if (s.reason) {
+      parts.push(`   ${s.reason}`);
+    }
+    parts.push("");
+  });
 
-  return parts.join("");
+  return parts.join("\n").trim();
 }

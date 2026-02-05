@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { sendMessage } from "@/lib/telegram";
-import { runPipeline, formatEntitiesForUser } from "@/lib/pipeline";
+import { runPipeline } from "@/lib/pipeline";
 
 interface TelegramUpdate {
   message?: {
@@ -49,15 +49,14 @@ export async function POST(request: NextRequest) {
 
 async function processUpdate(chatId: number, rawInput: string): Promise<void> {
   try {
-    const result = runPipeline(rawInput);
+    const result = await runPipeline(rawInput);
 
     if (!result.success) {
       await sendMessage(chatId, result.message);
       return;
     }
 
-    const formatted = formatEntitiesForUser(result.entities);
-    await sendMessage(chatId, formatted);
+    await sendMessage(chatId, result.message);
   } catch (err) {
     console.error("[webhook] Error:", err);
     try {

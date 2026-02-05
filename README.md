@@ -23,7 +23,9 @@ Copy-Item .env.example .env
 ```
 
 - `TELEGRAM_BOT_TOKEN` — токен от [@BotFather](https://t.me/BotFather)
-- `OPENAI_API_KEY` — для AI-анализа (потребуется на этапе поиска)
+- `OPENAI_API_KEY` — ключ OpenAI (модель gpt-4o-mini)
+- `GOOGLE_CSE_API_KEY` — ключ Google Custom Search API ([Credentials](https://console.cloud.google.com/apis/credentials))
+- `GOOGLE_CSE_ENGINE_ID` — ID поисковой системы ([Programmable Search Engine](https://programmablesearchengine.google.com/))
 
 ## Запуск
 
@@ -40,10 +42,10 @@ $env:TELEGRAM_BOT_TOKEN = "YOUR_TOKEN"
 .\scripts\set-webhook.ps1 -Url "https://your-app.vercel.app/api/telegram/webhook"
 ```
 
-## Реализовано (до Этапа 5)
+## Реализовано
 
-- ✅ Этап 1: Инициализация проекта (Next.js, зависимости)
-- ✅ Этап 2: Webhook-эндпоинт `/api/telegram/webhook`
-- ✅ Этап 3: Обработка ввода (текст и распознавание ссылок t.me / telegram.me)
-- ✅ Этап 4: Извлечение сущностей (утверждения, даты, числа, имена, ссылки)
-- ⏳ Этап 5+: Поиск источников, AI-анализ, отправка результатов
+- ✅ Webhook-эндпоинт `/api/telegram/webhook`
+- ✅ Обработка ввода (текст и ссылки t.me / telegram.me)
+- ✅ Поиск через Google Custom Search API
+- ✅ AI-ранжирование через OpenAI gpt-4o-mini (сравнение смысла)
+- ✅ Отправка 1–3 источников с оценкой уверенности
