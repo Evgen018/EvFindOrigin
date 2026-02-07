@@ -13,15 +13,22 @@ export function getBotUrl(): string {
 export async function sendMessage(
   chatId: number,
   text: string,
-  options?: { parse_mode?: "HTML" | "Markdown"; disable_web_page_preview?: boolean }
+  options?: {
+    parse_mode?: "HTML" | "Markdown";
+    disable_web_page_preview?: boolean;
+    reply_markup?: { inline_keyboard: Array<Array<{ text: string; url?: string; web_app?: { url: string } }>> };
+  }
 ): Promise<void> {
   const url = getBotUrl() + "/sendMessage";
-  const body = {
+  const body: Record<string, unknown> = {
     chat_id: chatId,
     text,
     parse_mode: options?.parse_mode ?? "HTML",
     disable_web_page_preview: options?.disable_web_page_preview ?? true,
   };
+  if (options?.reply_markup) {
+    body.reply_markup = options.reply_markup;
+  }
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

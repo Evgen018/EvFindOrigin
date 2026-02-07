@@ -44,7 +44,18 @@ $env:TELEGRAM_BOT_TOKEN = "YOUR_TOKEN"
 ## Реализовано
 
 - ✅ Webhook-эндпоинт `/api/telegram/webhook`
+- ✅ **Telegram Mini App** — UI на `/mini`
+- ✅ API поиска `/api/search` (JSON)
 - ✅ Обработка ввода (текст и ссылки t.me / telegram.me)
 - ✅ Поиск через Serper API
 - ✅ AI-ранжирование через OpenRouter (сравнение смысла)
 - ✅ Отправка 1–3 источников с оценкой уверенности
+
+## Telegram Mini App
+
+Откройте бота → нажмите «Открыть EvFindOrigin» или установите Menu Button:
+
+```powershell
+$env:TELEGRAM_BOT_TOKEN = "YOUR_TOKEN"
+.\scripts\set-menu-button.ps1 -Url "https://ev-find-origin-ruddy.vercel.app/mini"
+```
