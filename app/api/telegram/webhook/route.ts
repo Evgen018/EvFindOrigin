@@ -51,22 +51,11 @@ async function processUpdate(chatId: number, rawInput: string): Promise<void> {
   try {
     const trimmed = rawInput.trim();
     if (trimmed === "/start" || trimmed === "/help") {
-      const appUrl =
-        process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : process.env.APP_URL ?? "https://ev-find-origin-ruddy.vercel.app";
       await sendMessage(
         chatId,
         "<b>EvFindOrigin</b>\n\n" +
           "Отправьте текст или утверждение — я найду возможные источники и оценю их релевантность.\n\n" +
-          "Или откройте веб-приложение для удобного поиска:",
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "🔄 Открыть EvFindOrigin", web_app: { url: `${appUrl}/mini` } }],
-            ],
-          },
-        }
+          "Веб-приложение: кнопка <b>Open</b> рядом с полем ввода."
       );
       return;
     }
